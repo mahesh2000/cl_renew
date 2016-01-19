@@ -2,7 +2,8 @@
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     if(request.message === 'clicked_browser_action') {
-       var renewForms = $("input[value='renew']:submit").parent();
+       var renewForms = $("input[value='renew']:submit").parent(),
+           promises = [];
       $.each(renewForms, function(idx) {
         var actionUrl = $(this).attr('action'),
             data = {
@@ -11,7 +12,7 @@ chrome.runtime.onMessage.addListener(
             },
             urlWithQueryString = actionUrl + '?' + jQuery.param(data);
 
-        $.ajax({
+        promises.push($.ajax({
           type: "POST",
           url: urlWithQueryString,
           xhrFields: {
@@ -21,7 +22,10 @@ chrome.runtime.onMessage.addListener(
         })
         .always(function() {
           console.log('POST sent to  ' + urlWithQueryString);
-        });
+        }));
+      });
+      $.when.apply($, promises).always(function() {
+        if (confirm('Attempted to renew ' + promises.length + ' posts.')) {location.reload()};
       });
     }
   }
